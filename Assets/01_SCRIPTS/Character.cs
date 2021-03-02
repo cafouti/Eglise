@@ -12,6 +12,8 @@ public class Character : MonoBehaviour
     private float masse;
     private float gravity;
     private float energie = 0;
+    public float increment = 0;
+    private float pose = 1;
     public bool jumping = false;
     private bool canTrans = true;
 
@@ -33,16 +35,16 @@ public class Character : MonoBehaviour
 
     public GameObject gbF;
     public GameObject gbM;
-    
+
     private float[] fille;
     private float[] monstre;
-    
+
     /////////////////////////////////////////////////////////////////////////////////////////////
 
     // Start is called before the first frame update
     void Start()
     {
-        fille = new float[4] { speedF, sautF, masseF, gravityF};
+        fille = new float[4] { speedF, sautF, masseF, gravityF };
         monstre = new float[4] { speedM, sautM, masseM, gravityM };
         ChangeGB(gbF, 0, fille);
         xOffsetCurseur = curseur.anchoredPosition;
@@ -54,21 +56,12 @@ public class Character : MonoBehaviour
         float x = Input.GetAxis("Horizontal");
         mouvement.x = x * speed;
 
-        if(controller.isGrounded && mouvement.y < 0)
+        if (controller.isGrounded && mouvement.y < 0)
         {
             mouvement.y = masse;
         }
 
-        if(Input.GetButtonDown("Transformation") && !monstreEtat)
-        {
-            ChangeGB(gbM, 1.3f, monstre);
-            monstreEtat = true;
-        }
-        else if(Input.GetButtonDown("Transformation") && monstreEtat)
-        {
-            ChangeGB(gbF, -0.6f, fille);
-            monstreEtat = false;
-        }
+        Transformation();
 
         if (jumping)
         {
@@ -78,17 +71,41 @@ public class Character : MonoBehaviour
         Rotate();
         Jump();
 
-        if(canTrans)
+        if (canTrans)
         {
             Energie();
-        }        
-                        
-        mouvement.y += gravity * Time.deltaTime;        
+        }
+
+        mouvement.y += gravity * Time.deltaTime;
         controller.Move(mouvement * Time.deltaTime);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////
 
+    void Transformation()
+    {
+        if (Input.GetButtonDown("Transformation") && !monstreEtat)
+        {
+            ChangeGB(gbM, 1.3f, monstre);
+            monstreEtat = true;
+            energie = -0.2f;
+            if(pose>0)
+            {
+                pose *= -1;
+            }
+            
+        }
+        else if (Input.GetButtonDown("Transformation") && monstreEtat)
+        {
+            ChangeGB(gbF, -0.6f, fille);
+            monstreEtat = false;
+            energie = 0.2f;
+            if (pose < 0)
+            {
+                pose *= -1;
+            }
+        }
+    }
 
     void ChangeGB(GameObject gb, float decalage, float[] stats)
     {
@@ -112,7 +129,7 @@ public class Character : MonoBehaviour
         masse = stats[2];
         gravity = stats[3];
     }
-    
+
     void Jump()
     {
         if (Input.GetButtonDown("Jump") && controller.isGrounded)
@@ -129,7 +146,7 @@ public class Character : MonoBehaviour
 
     public void EndJump()
     {
-        if(controller.isGrounded)
+        if (controller.isGrounded)
         {
             this.jumping = false;
         }
@@ -151,10 +168,32 @@ public class Character : MonoBehaviour
 
     void Energie()
     {
-        energie = Mathf.Sin(0.5f*Time.time + Mathf.PI/4);
+        energie += increment * pose;
+        if (energie >= 1)
+        {
+            pose *= -1;
+        }
+        else if (energie <= -1)
+        {
+            pose *= -1;
+        }
+
+        //energie = Mathf.Sin(0.5f*Time.time + Mathf.PI/4);
         Debug.Log("energie = " + energie);
-        Vector2 move = new Vector2(energie,0);
-        //curseur.transform.Translate(75 * move * Time.deltaTime);
-        curseur.anchoredPosition = xOffsetCurseur + 75*move;
+        Vector2 move = new Vector2(energie, 0);
+        curseur.anchoredPosition = xOffsetCurseur + 75 * move;
+
+        if (energie < 0 && !monstreEtat)
+        {
+            ChangeGB(gbM, 1.3f, monstre);
+            monstreEtat = true;
+            
+        }
+        else if (energie > 0 && monstreEtat)
+        {
+            ChangeGB(gbF, -0.6f, fille);
+            monstreEtat = false;
+            
+        }
     }
 }
